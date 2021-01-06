@@ -1,0 +1,1 @@
+{  alias: "fit",  api: "",  assets: "",  date: "2021-01-06",  description: "General Utility for Curve Fitting with Syncfusion WPF GUI",  group: "aplwiki",  name: "FitUtil",  project_url: "https://github.com/rikedyp/FitUtil",  source: "",  tags: "aplwiki;curve-fitting;data-fitting;windows;graphing;plotting;syncfusion;wpf;gui;graphics",  version: "2.0.0",}
