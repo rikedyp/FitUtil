@@ -1,0 +1,16 @@
+ sc←SolidColor color;⎕USING
+⍝ To get a Solid Color from 3 numbers (RGB) or a Known color.
+
+ ⎕USING←'System.Windows.Media,WPF/PresentationCore.dll'
+
+ :If 3=⍴,color
+ :AndIf 0=↑1↑0⍴color ⍝ Numbers ?
+     sc←⎕NEW SolidColorBrush(Color.FromRgb color)
+
+ :ElseIf ' '=↑1↑0⍴color ⍝ Characters ?
+     sc←⎕NEW SolidColorBrush(⍎'Colors.',color)
+
+ :Else
+     sc←⎕NULL
+
+ :EndIf

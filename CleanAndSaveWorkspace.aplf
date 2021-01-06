@@ -1,0 +1,75 @@
+ CleanAndSaveWorkspace;dflags;integrity;∆refs
+⍝ Utility to 'Clean' and Save a WS while heavily using .Net objects.
+⍝ It will remove all the .Net objects, compact and check the integrity of the WS.
+⍝ If there is a problem it will suggest a way to try to recuperate the WS using SALT.
+⍝ Requirements: v14.1 or better.
+
+⍝ 0. Close all parked threads
+ {}2502⌶0
+
+⍝ 1. Close AppDomain
+ (⎕UCS 13),'Closing AppDomain...'
+ {}2101⌶0
+ 'AppDomain Closed'
+
+⍝ 2. Erase all the .Net objects (adapted from a post on the forum)
+ ∆refs←{                             ⍝ Vector of sub-space references for ⍵.
+     ⍺←⍬ ⋄ (⍴,⍺)↓⍺{                  ⍝ default exclusion list.
+         ⍵∊⍺:⍺                       ⍝ already been here: quit.
+         ⍵.(↑∇∘⍎⍨/⌽(⊂⍺∪⍵),↓⎕NL 9.1)  ⍝ recursively traverse any sub-spaces.
+     }⍵                              ⍝ for given starting ref.
+ }
+
+ {⍵.⎕EX ⍵.⎕NL-9.2}∆refs #
+ 'All .Net Objects are erased'
+
+
+⍝ 2. Clean-Up and Compact the WS
+ 'Compacting WS...'
+ {}⎕WA
+ 'Compaction Finished'
+
+
+⍝ 3. Check integrity of WS (Contributed by Dyalog)
+ dflags←2 ⎕NQ'.' 'setdflags' 417
+
+ :If 0=2 ⎕NQ'.' 'wscheck'
+    ⍝ WS integrity is OK
+     integrity←1
+ :Else
+    ⍝ WS integrity is not OK
+     integrity←0
+ :EndIf
+
+ 2 ⎕NQ'.' 'setdflags'dflags
+ 'Integrity of WS is ',('Compromised' 'Correct')[⎕IO+integrity]
+
+
+⍝ 4. Check for objects that are saved outside a scripted namespace
+⍝    that will be erased when the script is fixed.
+ 'Checking for objects that are saved outside a scripted namespace'
+ 'that will be erased when the script is fixed:'
+ ⎕SE.UCMD'check'
+
+
+⍝ 5. Save the WS
+ :If integrity
+    ⍝ Save the WS to ⎕WSID location without the state indicator.
+     0 ⎕SAVE ⎕WSID
+     ⎕←'WS Saved: ',⎕WSID
+
+ :Else
+    ⍝ There is a problem with the WS integrity.
+     ⎕←'WS NOT Saved and may be corrupted.'
+     ⎕←'Try Saving the WS as Text using SALT.Snap and Reload-it using SALT.Boot'
+     ''
+     ']CLEAN'
+     '⎕SE.SALT.Snap ''',⎕WSID,'_Snap -loadfn -makedir'' ⍝ Save the WS as text'
+     ⍝     ]snap   C:\Secovac2\Program\APL Dev\DSechoir2_Snap -loadfn -makedir -noprompt
+     ')CLEAR'
+     '⎕SE.SALT.Boot ''',⎕WSID,'_Snap\load_ws.dyalog -xload'' ⍝ Reload the WS saved as text'
+     ⍝ ⎕SE.SALT.Boot 'C:\Secovac2\Program\APL Dev\DSechoir2_Snap\load_ws.dyalog -xload'
+     ']CLEAN'
+     '⍝ Inspect the WS if complete and re-save it'
+
+ :End

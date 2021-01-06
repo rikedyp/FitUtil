@@ -1,0 +1,21 @@
+ abcdr2←x Cubic y;abcd;r2;temp;yt
+⍝ FIND THE COEFFICIENTS(a,b,c,d) OF A CUBIC REGRESSION
+⍝ Y' = a + b×X + c×X*2 + d×X*3
+
+ abcdr2←0 0 0 0 0
+
+ :If 4>⍴∪x
+     ∆CRLF,'6. CUBIC:           Not Enough Independant Points for a Regression' ⋄ →0
+ :End
+
+ :Trap 0
+     abcd←y⌹x∘.*0 1 2 3
+     yt←abcd YTCubic x
+     r2←1-(+/(y-yt)*2)÷+/(y-(+/y)÷⍴y)*2
+     abcdr2←abcd,r2
+
+     temp←∆CRLF,'6. CUBIC:           Y'' = ',(⍕abcdr2[1]),' + ',(⍕abcdr2[2]),'×X + ',(⍕abcdr2[3]),'×X*2 + '
+     temp,(⍕abcdr2[4]),'×X*3   (r² = ',(DEB 3⍕abcdr2[5]),')'
+ :Else
+     ∆CRLF,'6. CUBIC:           Regression not possible' ⋄ →0
+ :EndTrap

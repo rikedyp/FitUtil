@@ -1,0 +1,98 @@
+ __MenuEventHandler(sender event);bitmap;bmpEncoder;chart;dlg;fileStream;icon;img;MsgBox_obj;⎕USING
+⍝ Main program to handle all the Menu event
+
+ :Select event.Source.Header
+
+ :Case 'Print Graph'
+     chart←1⌷win.TabControl.SelectedContent.Children
+     chart.Print ⍬
+
+
+ :Case 'Print Graph + Grid'
+     img←0 CaptureGUI win.TabControl.SelectedContent
+     'FitUtil Print Graph'PrintVisual img
+
+
+ :Case 'Save Graph'
+     ⎕USING←'Microsoft.Win32,WPF/PresentationFramework.dll'
+     dlg←⎕NEW SaveFileDialog
+
+     dlg.Title←'Save The Graph As An Image File'
+     dlg.Filter←'JPeg Image|*.jpg|Bitmap Image|*.bmp|PNG Image|*.png|GIF Image|*.gif|TIFF Image|*.tiff'
+     dlg.OverwritePrompt←1
+     dlg.InitialDirectory←'::{20D04FE0-3AEA-1069-A2D8-08002B30309D}' ⍝ My Computer
+
+   ⍝ Shows the Dialog as Modal and Owned by the Current Window
+     :If dlg.ShowDialog(win)
+     :AndIf 0≠⍴dlg.FileName
+         chart←1⌷win.TabControl.SelectedContent.Children
+         chart.Save(⊂dlg.FileName)
+     :Else
+         ⍝ No file name was selected
+     :End
+
+
+ :Case 'Save Graph + Grid'
+     img←0 CaptureGUI win.TabControl.SelectedContent
+
+     ⎕USING←'System.Windows.Media.Imaging,WPF/PresentationCore.dll'
+     bmpEncoder←⎕NEW PngBitmapEncoder
+     bmpEncoder.Frames.Add(BitmapFrame.Create(img.Source))
+
+     ⎕USING←'Microsoft.Win32,WPF/PresentationFramework.dll'
+     dlg←⎕NEW SaveFileDialog
+     dlg.Title←'Save The Graph and Grid As a .PNG Image File'
+     dlg.Filter←'PNG Image|*.png'
+     dlg.OverwritePrompt←1
+     dlg.InitialDirectory←'::{20D04FE0-3AEA-1069-A2D8-08002B30309D}' ⍝ My Computer
+
+    ⍝ Shows the Dialog as Modal and Owned by the Current Window
+     :If 1=dlg.ShowDialog(win)
+     :AndIf 0≠⍴dlg.FileName
+         fileStream←dlg.OpenFile
+         bmpEncoder.Save(fileStream)
+         fileStream.Close
+     :Else
+         ⍝ No file name was selected
+     :End
+
+
+ :Case '_Quit'
+     win.Close
+     ⎕EX'win'
+
+ :Case '_Zoom'
+     dlg←'   The Zoom Feature is available at all times.',3⍴#.∆CRLF
+     dlg,←'> Use the Mouse Wheel to Zoom the Graph and the Left Mouse Button to Pan',3⍴#.∆CRLF
+     dlg,←'> Or Click the Right Mouse Button to Obtain Resizable Scroll Bars',3⍴#.∆CRLF
+     dlg,←'> Click the Right Mouse Button when Zooming to Restore the Original Graph   ',3⍴#.∆CRLF
+
+    ⍝ Prepare a Custom WPF Message Box
+     ⎕USING←'System.Windows.Markup,WPF/PresentationFramework.dll'
+     MsgBox_obj←XamlReader.Parse(⊂MsgBoxCustom_xaml)
+
+    ⍝ Set the Custom Error Text
+     (MsgBox_obj.FindName⊂'tbInfo').Text←dlg
+
+    ⍝ Set the Error Icon of the message box
+     ⎕USING←'System.Drawing,System.Drawing.dll' 'System.Windows,WPF/PresentationCore.dll' 'System.Windows,WPF/WindowsBase.dll'
+     icon←SystemIcons.Information
+
+    ⍝ Change the Icon to a WPF bitmap
+     bitmap←Interop.Imaging.CreateBitmapSourceFromHIcon(icon.Handle)(Int32Rect.Empty)(Media.Imaging.BitmapSizeOptions.FromEmptyOptions)
+     (MsgBox_obj.FindName⊂'imgIcon').Source←bitmap
+
+    ⍝ Set the Icon of the Window
+     MsgBox_obj.Icon←ImageFromBase64String fitUtil_ico
+
+    ⍝ Set the Owner
+     MsgBox_obj.Owner←win
+
+    ⍝ Show the Custom Message Box
+     {}MsgBox_obj.ShowDialog
+
+
+ :Else
+     ⎕←'Don''t know what to do with: ',event.Source.Header
+
+ :EndSelect

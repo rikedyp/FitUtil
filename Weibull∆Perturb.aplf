@@ -1,0 +1,14 @@
+ Weibull∆Perturb b;BETA;I
+⍝ PERFORMS PERTURBATION OF ESTIMATORS TO COMPUTE DERIVATIVES. CALLS FUNC.
+
+ BETA←b
+ m←((⍴AT),1)⍴1+I←0
+START:→((⍴b)<I←I+1)/FORM
+ INC←b[I]×0.00002
+ b[I]←b[I]+INC
+ m←m,(AT-,FUNC b)÷INC
+ b←BETA
+ →START
+FORM:m←(0 1)↓m
+ g←(⍉m)+.×AT
+ m←(⍉m)+.×m

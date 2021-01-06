@@ -1,0 +1,4 @@
+ yt←abc YTParabolic x
+⍝ EVALUATE yt = a + b×X + c×X*2
+
+ yt←(x∘.*0 1 2)+.×abc

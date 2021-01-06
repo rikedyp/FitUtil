@@ -1,0 +1,57 @@
+ abcr2←X Weibull Y;ASAVE;B;BSAVE;B0;B1;COUNT;DDL;FUNC;m;OLDSS;R2;sink;XX;x0;YHAT;YY;y0
+⍝ FIND THE COEFFICIENTS(a,b,c) OF A WEIBULL REGRESSION
+⍝ Y' = a × exp(b×X*c)
+⍝ THE METHOD USED IS THE ONE DEVELOPPED BY D.W. MARQUARDT IN HIS PAPER:
+⍝ 'AN ALGORITHM FOR LEAST SQUARES ESTIMATION OF NONLINEAR PARAMETERS'
+⍝ JOURNAL OF SOCIETY OF INDUSTRIAL AND APPLIED MATHEMATICS 2 1963 431-441'
+⍝ 42 STAT12                   |EWRUM--|043|016|770707|075424
+⍝ IBM PUB: SH20-1841,GX20-2001
+
+ abcr2←0 0 0 0
+
+ :If ∨/Y≤0
+     ∆CRLF,'10.WEIBULL:          Regression Not Possible because some Y values are ≤ 0' ⋄ →0
+ :End
+
+ :If 0>DDL←(⍴∪X)-3
+     ∆CRLF,'10.WEIBULL:          Not Enough Independant Points for a Regression' ⋄ →0
+ :End
+
+ :Trap 0
+   ⍝ INITIAL FUNCTION TO FIND AN APPROXIMATION OF THE COEFFICIENTS
+     sink←⎕FX'Z←FUNC B2;YHAT' 'XX←X*B2 ⋄ x0←(+/XX)÷⍴X' 'B1←(+/(YY-y0)×(XX-x0))÷+/(XX-x0)*2' 'B0←y0-B1×x0 ⋄ YHAT←*B0+B1×XX' 'Z←YHAT-Y'
+     YY←⍟Y ⋄ y0←(+/YY)÷⍴Y
+
+     Weibull∆Fit 1 ⍝ FIRST TRIAL TO GET AN APPROXIMATION OF THE COEFFICIENTS
+
+     :If COUNT=50
+         ∆CRLF,'10.WEIBULL:          Not able to Converge to a Solution' ⋄ →0
+     :End
+
+     sink←FUNC BSAVE
+     B←(*B0),B1,BSAVE  ⍝ FIRST APPROXIMATION OF THE COEFFICIENTS
+
+     :If 0=B[1]
+         ∆CRLF,'10.WEIBULL:          An Impossible Solution was Obtained' ⋄ →0
+     :End
+
+     YHAT←B YTWeibull X
+     R2←1-(+/(Y-YHAT)*2)÷+/(Y-(+/Y)÷⍴Y)*2 ⍝ RESULT OF THE FIRST APPROXIMATION
+
+   ⍝ FINAL WEIBULL FUNCTION
+     sink←⎕FX'Z←FUNC B' 'Z←(B[1]×*B[2]×X*B[3])-Y'
+
+     Weibull∆Fit B ⍝ FINAL CORRELATION WITH ESTIMATED COEFFICIENTS
+
+     :If COUNT=50
+         ∆CRLF,'10.WEIBULL:          Not able to Converge to a Solution' ⋄ →0
+     :End
+
+     YHAT←BSAVE YTWeibull X
+     R2←1-(+/(Y-YHAT)*2)÷+/(Y-(+/Y)÷⍴Y)*2
+     abcr2←BSAVE,R2
+
+     ∆CRLF,'10.WEIBULL:          Y'' = ',(⍕abcr2[1]),' × exp(',(⍕abcr2[2]),' × X*',(⍕abcr2[3]),')   (r² = ',(DEB 3⍕abcr2[4]),')'
+ :Else
+     ∆CRLF,'10.WEIBULL:          Not able to Converge to a Solution' ⋄ →0
+ :EndTrap

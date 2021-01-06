@@ -1,0 +1,134 @@
+ ds←{dataSetName}AplToDS nss;array;colName;colNames;colType;dt;index;IsChar;IsNum;ns;nsName;parseDate;ptr;test;⎕USING
+⍝ Function to convert namespaces within a namespace to a .Net DataSet
+⍝
+⍝ nss = namespaces within a nameless namespace
+⍝ ds  = .Net DataSet that contains a collection of DataTable(s)
+⍝
+⍝ The properties name of the namespace can finish with _? to apply a two way converter:
+⍝ _b  : Boolean converter 1, 0 ¯1 is True, False, Indeterminate
+⍝ _d1 : OADate
+⍝ _d2 : 3↑⎕TS or 6↑⎕TS
+⍝ _d3 : Character representation of a date
+⍝
+⍝ Typical usage:
+⍝ ns←⎕NS''
+⍝ ns.Books←⎕NS''
+⍝ ns.Books.Author←'author1' 'author2' 'author3'
+⍝ ns.Books.Title←'title1' 'title2' 'title3'
+⍝ ns.Books.Price←100 200 300
+⍝ ns.Books.IsAvailable_b←1 0 ¯1                        ⍝ Boolean converter
+⍝ ns.Books.Date_d1←42000 43000 44000                   ⍝ OADate converter
+⍝ ns.Books.Date_d2←(2014 12 1)(2013 8 4)(2012 6 2)     ⍝ 3↑⎕TS converter
+⍝ ns.Books.Date_d3←'2014-12-5' '2013/8/9' '2012 6 5'   ⍝ Characters of date converter
+⍝
+⍝ ds←AplToDS ns
+⍝ ShowDT ds.Tables[⊂'Books']  ⍝ Show and modify the DataTable
+⍝ ns←DStoApl ds               ⍝ Convert back to Apl the DataSet
+⍝
+⍝ or if you are binding use the following statement:
+⍝ ItemsSource="{Binding Tables[Books]}"
+⍝ and set the DataContext to the DataSet created with AplToDS
+
+ :If 9≠⎕NC'nss'
+ :OrIf '[Namespace]'≢¯11↑⍕nss
+     ⎕←'AplToDS Error: Argument must be a nameless Namespace'
+     →0
+ :EndIf
+
+ IsChar←{' '=↑1↑0⍴⍵}
+ IsNum←{0=↑1↑0⍴⍵}
+
+ :If 0=⎕NC'dataSetName'
+     dataSetName←'DataSet'
+
+ :ElseIf ~IsChar dataSetName
+     ⎕←'AplToDS Error: dataSetName must be Characters'
+     →0
+ :End
+
+ ⎕USING←'System' 'System.Data,System.Data.dll' 'Dyalog' 'System.Windows.Controls,WPF/PresentationFramework.dll'
+ ds←⎕NEW DataSet(⊂dataSetName)     ⍝ Default value in case of error
+
+⍝ TryParse will return 1 if successful with the parsed value in 'ptr'
+ ptr←⎕NEW ByRef(⎕NEW DateTime ⎕TS)                 ⍝ Pointer to receive the conversion of 'parseData' if successfull
+ parseDate←{(DateTime.TryParse(⍵ ptr)):ptr.Value   ⍝ Parse characters to a .Net DateTime Object
+     ⎕NULL}                                        ⍝ Default value if characters are not a valid date
+
+ :Trap 0
+   ⍝ Convert each simple namespaces into a DataTable and Add it to the DataSet:
+     :For nsName :In nss.⎕NL-9
+         ns←nss.⍎nsName            ⍝ Current namespace of variables
+         colNames←(ns.⎕NL-2)       ⍝ Get the variable names (colNames) of the namespace
+         array←⍉⊃ns.⍎¨colNames     ⍝ Get all the values of the colNames as a matrix
+
+       ⍝ Convert the namespace into a DataTable
+         dt←⎕NEW DataTable(⊂nsName)
+
+       ⍝ Determine the Type of each column
+         colType←''
+
+         :For index :In ⍳2⌷⍴array
+
+             colName←index⊃colNames
+
+             :If '_b'≡¯2↑colName
+                ⍝ 1 and 0 to Boolean. ¯1 is Inderminate state (System.DBNull)
+                 :If ∧/IsNum¨array[;index]
+                     colType,←Boolean
+                     test←array[;index]=¯1                                    ⍝ ¯1 = Indeterminate state
+                     array[{⍵/⍳⍴⍵}test;index]←DBNull.Value                    ⍝ Change the ¯1 for DBNull.Value
+                     array[{⍵/⍳⍴⍵}~test;index]←1⌊0⌈array[{⍵/⍳⍴⍵}~test;index]  ⍝ Coerce to 1 or 0 all the other values
+                 :Else
+                     colType,←String
+                     array[;index]←⍕¨array[;index]
+                     ⎕←'AplToDS Error: Don''t know what to do with: ',nsName,'.',colName
+                 :End
+
+             :ElseIf '_d1'≡¯3↑colName
+                ⍝ Numeric OADates to DateTime
+                 :If ∧/IsNum¨array[;index]
+                     colType,←DateTime
+                     array[;index]←DateTime.FromOADate¨array[;index]
+                 :Else
+                     colType,←String
+                     array[;index]←⍕¨array[;index]
+                     ⎕←'AplToDS Error: Don''t know what to do with: ',nsName,'.',colName
+                 :End
+
+             :ElseIf '_d2'≡¯3↑colName
+               ⍝ 3↑⎕TS or 6↑⎕TS to DateTime
+                 colType,←DateTime
+                 array[;index]←parseDate¨⍕¨array[;index]   ⍝ parseDate cannot bug
+
+             :ElseIf '_d3'≡¯3↑colName
+               ⍝ Character representation of a date
+                 colType,←DateTime
+                 array[;index]←parseDate¨⍕¨array[;index]   ⍝ parseDate cannot bug
+
+             :ElseIf ∧/IsNum¨array[;index]
+               ⍝ Only numbers with no converters
+                 colType,←Double
+
+             :ElseIf ∧/IsChar¨array[;index]
+               ⍝ Only characters with no converters
+                 colType,←String
+
+             :Else
+                 ⎕←'AplToDS Error: Don''t know what to do with: ',nsName,'.',colName
+                 colType,←String
+                 array[;index]←⍕¨array[;index]
+
+             :EndIf
+         :EndFor
+
+        ⍝ Set the Column's Types and Names of the DataTable:
+         {}colNames{dt.Columns.Add ⍺ ⍵}¨colType
+
+       ⍝ Fill the DataTable
+         2010⌶dt array
+
+       ⍝ Add the DataTable to the DataSet
+         ds.Tables.Add(dt)
+
+     :EndFor
+ :EndTrap

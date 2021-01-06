@@ -1,0 +1,377 @@
+ SHOW data;abcdr2;abcr2;abr2;maxx;minx;nbr;ns;tabItem;test;x;xtest;xx;x2;y;yt;ytest;yy;y2;⎕USING;dyalogversion
+⍝ Function to show the results of the 10 regressions made by FIT or TFIT using WPF.
+
+ :If 12≠⍴data ⋄ ⎕←'Wrong Size Nested Array !' ⋄ →0 ⋄ :End
+
+ (⎕IO ⎕ML ⎕WX ⎕PP)←1 3 3 5 ⍝ System variables
+
+⍝ Syncfusion librairies used by the Xaml.
+⍝ Syncfusion version changes with Dyalog version
+ dyalogversion←⍎4↑2⊃# ⎕WG'APLVersion'   ⍝ Windows only?
+ :If 16≡dyalogversion
+     ⎕USING←'Syncfusion.UI.Xaml.Charts,Syncfusion/4.5/Syncfusion.SfChart.WPF.dll'
+     ⎕USING,←⊂'Syncfusion.UI.Xaml.Grid,Syncfusion/4.5/Syncfusion.SfGrid.WPF.dll'
+ :ElseIf 17.1≤dyalogversion
+     ⎕USING←'Syncfusion.UI.Xaml.Charts,Syncfusion/4.6/Syncfusion.SfChart.WPF.dll'
+     ⎕USING,←⊂'Syncfusion.UI.Xaml.Grid,Syncfusion/4.6/Syncfusion.SfGrid.WPF.dll'
+ :Else
+     ⎕←'Unsupported Dyalog version - should be ≥16 - Syncfusion version undefined'
+ :EndIf
+ :Trap 0 ⋄ Anything ⋄ :EndTrap
+
+⍝ Parse the XAML
+ :If ⎕NULL≡↑win←FixXaml Win_xaml
+    ⍝ Failure fixing the Xaml
+     ⎕←2⊃win
+     →0
+ :EndIf
+
+⍝ Set the Main Window Icon
+ win.Icon←ImageFromBase64String fitUtil_ico
+
+⍝ Set the Icons for the menus
+ win.imgPrint.Source←ImageFromBase64String Print_b64
+ win.imgSave.Source←ImageFromBase64String Save_b64
+ win.imgQuit.Source←ImageFromBase64String Quit_b64
+
+⍝ Set the custom cursor for the tabs
+ win.TabControl.Cursor←CursorFromBase64String handCur_cur
+
+⍝ Set Routed Events on the whole Window for ClickEvent when a MenuItem is clicked.
+ ⎕USING,←'System.Windows,WPF/PresentationCore.dll' 'System.Windows.Controls.Primitives,WPF/PresentationFramework.dll'
+ win.AddHandler(Controls.MenuItem.ClickEvent)(⎕NEW RoutedEventHandler(⎕OR'__MenuEventHandler'))
+
+⍝ To add a '*' to the Tab caption for the Best Regression
+ nbr←⍬⍴1↑⍒∊¯1↑¨1⊃¨10↑data ⍝ Number of the best regression
+ tabItem←nbr⌷win.TabControl.Items
+ tabItem.Header←(tabItem.Header),' *'
+
+⍝ Extract X and Y from the nested array
+ x←11⊃data ⋄ y←12⊃data
+
+⍝ Prepare the Graphs for each regression:
+⍝ LINEAR
+ :If ∧/0=1 1⊃data
+    ⍝ Regression was not possible. Nothing to show.
+     win.chartLinear.Watermark.Visibility←win.Visibility.Visible
+
+ :Else
+     minx←⌊/x ⋄ maxx←⌈/x
+     xx←minx,minx+(0.005×maxx-minx)×⍳200
+     abr2←1 1⊃data ⋄ test←1 2⊃data
+     xtest←test/x ⋄ ytest←test/y
+     x2←(~test)/x ⋄ y2←(~test)/y
+     yt←abr2[1 2]#.YTLinear x
+     yy←abr2[1 2]#.YTLinear xx
+
+     win.chartLinear.Header←'Linear: Y'' = ',(⍕abr2[1]),' + ',(⍕abr2[2]),'×X  (r² = ',(DEB 3⍕abr2[3]),')'
+
+     ns←⎕NS''
+     ns.(Grid LinePoints GoodPoints BadPoints Line)←⎕NS¨5⍴⊂''
+     ns.Grid.(Index X Y YT)←↓¨{⍕((⍴⍵),1)⍴⍵}¨↓[1](⍳⍴x),x,y,[1.5]yt ⍝ Format as characters with decimal point aligned and with ⎕PP of Namespace
+     ns.LinePoints.(X YT)←x yt
+     ns.GoodPoints.(X Y)←x2 y2
+     ns.BadPoints.(X Y)←xtest ytest
+     ns.Line.(X YT)←xx yy
+
+     win.tabLinear.DataContext←AplToDS ns
+
+     :If 0=+/test
+        ⍝ FIT was used. Don't show the Points Removed Series.
+         win.chartLinear.Series[3].(Visibility VisibilityOnLegend)←win.Visibility.Hidden
+     :EndIf
+ :EndIf
+
+⍝ EXPONENTIAL
+ :If ∧/0=2 1⊃data
+    ⍝ Regression was not possible. Nothing to show.
+     win.chartExponential.Watermark.Visibility←win.Visibility.Visible
+
+ :Else
+     minx←⌊/x ⋄ maxx←⌈/x
+     xx←minx,minx+(0.005×maxx-minx)×⍳200
+     abr2←2 1⊃data ⋄ test←2 2⊃data
+     xtest←test/x ⋄ ytest←test/y
+     x2←(~test)/x ⋄ y2←(~test)/y
+     yt←abr2[1 2]#.YTExponential x
+     yy←abr2[1 2]#.YTExponential xx
+
+     win.chartExponential.Header←'Exponential: Y'' = ',(⍕abr2[1]),' × exp(',(⍕abr2[2]),'×X)   (r² = ',(DEB 3⍕abr2[3]),')'
+
+     ns←⎕NS''
+     ns.(Grid LinePoints GoodPoints BadPoints Line)←⎕NS¨5⍴⊂''
+     ns.Grid.(Index X Y YT)←↓¨{⍕((⍴⍵),1)⍴⍵}¨↓[1](⍳⍴x),x,y,[1.5]yt ⍝ Format as characters with decimal point aligned and with ⎕PP of Namespace
+     ns.LinePoints.(X YT)←x yt
+     ns.GoodPoints.(X Y)←x2 y2
+     ns.BadPoints.(X Y)←xtest ytest
+     ns.Line.(X YT)←xx yy
+
+     win.tabExponential.DataContext←AplToDS ns
+
+     :If 0=+/test
+       ⍝ FIT was used. Don't show the Points Removed Series.
+         win.chartExponential.Series[3].(Visibility VisibilityOnLegend)←win.Visibility.Hidden
+     :EndIf
+ :EndIf
+
+⍝ POWER
+ :If ∧/0=3 1⊃data
+   ⍝ Regression was not possible. Nothing to show.
+     win.chartPower.Watermark.Visibility←win.Visibility.Visible
+
+ :Else
+     minx←⌊/x ⋄ maxx←⌈/x
+     xx←minx,minx+(0.005×maxx-minx)×⍳200
+     abr2←3 1⊃data ⋄ test←3 2⊃data
+     xtest←test/x ⋄ ytest←test/y
+     x2←(~test)/x ⋄ y2←(~test)/y
+     yt←abr2[1 2]#.YTPower x
+     yy←abr2[1 2]#.YTPower xx
+
+     win.chartPower.Header←'Power: Y'' = ',(⍕abr2[1]),' × X*',(⍕abr2[2]),'  (r² = ',(DEB 3⍕abr2[3]),')'
+
+     ns←⎕NS''
+     ns.(Grid LinePoints GoodPoints BadPoints Line)←⎕NS¨5⍴⊂''
+     ns.Grid.(Index X Y YT)←↓¨{⍕((⍴⍵),1)⍴⍵}¨↓[1](⍳⍴x),x,y,[1.5]yt ⍝ Format as characters with decimal point aligned and with ⎕PP of Namespace
+     ns.LinePoints.(X YT)←x yt
+     ns.GoodPoints.(X Y)←x2 y2
+     ns.BadPoints.(X Y)←xtest ytest
+     ns.Line.(X YT)←xx yy
+
+     win.tabPower.DataContext←AplToDS ns
+
+     :If 0=+/test
+       ⍝ FIT was used. Don't show the Points Removed Series.
+         win.chartPower.Series[3].(Visibility VisibilityOnLegend)←win.Visibility.Hidden
+     :EndIf
+ :EndIf
+
+⍝ LOGARITHMIC
+ :If ∧/0=4 1⊃data
+   ⍝ Regression was not possible. Nothing to show.
+     win.chartLogarithmic.Watermark.Visibility←win.Visibility.Visible
+
+ :Else
+     minx←⌊/x ⋄ maxx←⌈/x
+     xx←minx,minx+(0.005×maxx-minx)×⍳200
+     abr2←4 1⊃data ⋄ test←4 2⊃data
+     xtest←test/x ⋄ ytest←test/y
+     x2←(~test)/x ⋄ y2←(~test)/y
+     yt←abr2[1 2]#.YTLogarithmic x
+     yy←abr2[1 2]#.YTLogarithmic xx
+
+     win.chartLogarithmic.Header←'Logarithmic: Y'' = ',(⍕abr2[1]),' + ',(⍕abr2[2]),'×ln(X)  (r² = ',(DEB 3⍕abr2[3]),')'
+
+     ns←⎕NS''
+     ns.(Grid LinePoints GoodPoints BadPoints Line)←⎕NS¨5⍴⊂''
+     ns.Grid.(Index X Y YT)←↓¨{⍕((⍴⍵),1)⍴⍵}¨↓[1](⍳⍴x),x,y,[1.5]yt ⍝ Format as characters with decimal point aligned and with ⎕PP of Namespace
+     ns.LinePoints.(X YT)←x yt
+     ns.GoodPoints.(X Y)←x2 y2
+     ns.BadPoints.(X Y)←xtest ytest
+     ns.Line.(X YT)←xx yy
+
+     win.tabLogarithmic.DataContext←AplToDS ns
+
+     :If 0=+/test
+       ⍝ FIT was used. Don't show the Points Removed Series.
+         win.chartLogarithmic.Series[3].(Visibility VisibilityOnLegend)←win.Visibility.Hidden
+     :EndIf
+ :EndIf
+
+⍝ PARABOLIC
+ :If ∧/0=5 1⊃data
+   ⍝ Regression was not possible. Nothing to show.
+     win.chartParabolic.Watermark.Visibility←win.Visibility.Visible
+
+ :Else
+     minx←⌊/x ⋄ maxx←⌈/x
+     xx←minx,minx+(0.005×maxx-minx)×⍳200
+     abcr2←5 1⊃data ⋄ test←5 2⊃data
+     xtest←test/x ⋄ ytest←test/y
+     x2←(~test)/x ⋄ y2←(~test)/y
+     yt←abcr2[1 2 3]#.YTParabolic x
+     yy←abcr2[1 2 3]#.YTParabolic xx
+
+     win.chartParabolic.Header←'Parabolic: Y'' = ',(⍕abcr2[1]),' + ',(⍕abcr2[2]),'×X + ',(⍕abcr2[3]),'×X*2  (r² = ',(DEB 3⍕abcr2[4]),')'
+
+     ns←⎕NS''
+     ns.(Grid LinePoints GoodPoints BadPoints Line)←⎕NS¨5⍴⊂''
+     ns.Grid.(Index X Y YT)←↓¨{⍕((⍴⍵),1)⍴⍵}¨↓[1](⍳⍴x),x,y,[1.5]yt ⍝ Format as characters with decimal point aligned and with ⎕PP of Namespace
+     ns.LinePoints.(X YT)←x yt
+     ns.GoodPoints.(X Y)←x2 y2
+     ns.BadPoints.(X Y)←xtest ytest
+     ns.Line.(X YT)←xx yy
+
+     win.tabParabolic.DataContext←AplToDS ns
+
+     :If 0=+/test
+       ⍝ FIT was used. Don't show the Points Removed Series.
+         win.chartParabolic.Series[3].(Visibility VisibilityOnLegend)←win.Visibility.Hidden
+     :EndIf
+ :EndIf
+
+⍝ CUBIC
+ :If ∧/0=6 1⊃data
+   ⍝ Regression was not possible. Nothing to show.
+     win.chartCubic.Watermark.Visibility←win.Visibility.Visible
+
+ :Else
+     minx←⌊/x ⋄ maxx←⌈/x
+     xx←minx,minx+(0.005×maxx-minx)×⍳200
+     abcdr2←6 1⊃data ⋄ test←6 2⊃data
+     xtest←test/x ⋄ ytest←test/y
+     x2←(~test)/x ⋄ y2←(~test)/y
+     yt←abcdr2[1 2 3 4]#.YTCubic x
+     yy←abcdr2[1 2 3 4]#.YTCubic xx
+
+     win.chartCubic.Header←'Cubic: Y'' = ',(⍕abcdr2[1]),' + ',(⍕abcdr2[2]),'×X + ',(⍕abcdr2[3]),'×X*2 + ',(⍕abcdr2[4]),'×X*3  (r² = ',(DEB 3⍕abcdr2[5]),')'
+
+     ns←⎕NS''
+     ns.(Grid LinePoints GoodPoints BadPoints Line)←⎕NS¨5⍴⊂''
+     ns.Grid.(Index X Y YT)←↓¨{⍕((⍴⍵),1)⍴⍵}¨↓[1](⍳⍴x),x,y,[1.5]yt ⍝ Format as characters with decimal point aligned and with ⎕PP of Namespace
+     ns.LinePoints.(X YT)←x yt
+     ns.GoodPoints.(X Y)←x2 y2
+     ns.BadPoints.(X Y)←xtest ytest
+     ns.Line.(X YT)←xx yy
+
+     win.tabCubic.DataContext←AplToDS ns
+
+     :If 0=+/test
+       ⍝ FIT was used. Don't show the Points Removed Series.
+         win.chartCubic.Series[3].(Visibility VisibilityOnLegend)←win.Visibility.Hidden
+     :EndIf
+ :EndIf
+
+⍝ LINEAR @(0,0)
+ :If ∧/0=7 1⊃data
+   ⍝ Regression was not possible. Nothing to show.
+     win.chartLinear0.Watermark.Visibility←win.Visibility.Visible
+
+ :Else
+     minx←0 ⋄ maxx←⌈/x
+     xx←minx,minx+(0.01×maxx-minx)×⍳100
+     abr2←7 1⊃data ⋄ test←7 2⊃data
+     xtest←test/x ⋄ ytest←test/y
+     x2←(~test)/x ⋄ y2←(~test)/y
+     yt←abr2[1 2]#.YTLinear x
+     yy←abr2[1 2]#.YTLinear xx
+
+     win.chartLinear0.Header←'Linear @(0,0): Y'' = 0 + ',(⍕abr2[2]),'×X  (r² = ',(DEB 3⍕abr2[3]),')'
+
+     ns←⎕NS''
+     ns.(Grid LinePoints GoodPoints BadPoints Line)←⎕NS¨5⍴⊂''
+     ns.Grid.(Index X Y YT)←↓¨{⍕((⍴⍵),1)⍴⍵}¨↓[1](⍳⍴x),x,y,[1.5]yt ⍝ Format as characters with decimal point aligned and with ⎕PP of Namespace
+     ns.LinePoints.(X YT)←(0,x)(0,yt)
+     ns.GoodPoints.(X Y)←x2 y2
+     ns.BadPoints.(X Y)←xtest ytest
+     ns.Line.(X YT)←xx yy
+
+     win.tabLinear0.DataContext←AplToDS ns
+
+     :If 0=+/test
+       ⍝ FIT was used. Don't show the Points Removed Series.
+         win.chartLinear0.Series[3].(Visibility VisibilityOnLegend)←win.Visibility.Hidden
+     :EndIf
+ :EndIf
+
+⍝ PARABOLIC @(0,0)
+ :If ∧/0=8 1⊃data
+   ⍝ Regression was not possible. Nothing to show.
+     win.chartParabolic0.Watermark.Visibility←win.Visibility.Visible
+
+ :Else
+     minx←0 ⋄ maxx←⌈/x
+     xx←minx,minx+(0.01×maxx-minx)×⍳100
+     abcr2←8 1⊃data ⋄ test←8 2⊃data
+     xtest←test/x ⋄ ytest←test/y
+     x2←(~test)/x ⋄ y2←(~test)/y
+     yt←abcr2[1 2 3]#.YTParabolic x
+     yy←abcr2[1 2 3]#.YTParabolic xx
+
+     win.chartParabolic0.Header←'Parabolic @(0,0): Y'' = 0 + ',(⍕abcr2[2]),'×X  +  ',(⍕abcr2[3]),'×X*2 (r² = ',(DEB 3⍕abcr2[4]),')'
+
+     ns←⎕NS''
+     ns.(Grid LinePoints GoodPoints BadPoints Line)←⎕NS¨5⍴⊂''
+     ns.Grid.(Index X Y YT)←↓¨{⍕((⍴⍵),1)⍴⍵}¨↓[1](⍳⍴x),x,y,[1.5]yt ⍝ Format as characters with decimal point aligned and with ⎕PP of Namespace
+     ns.LinePoints.(X YT)←(0,x)(0,yt)
+     ns.GoodPoints.(X Y)←x2 y2
+     ns.BadPoints.(X Y)←xtest ytest
+     ns.Line.(X YT)←xx yy
+
+     win.tabParabolic0.DataContext←AplToDS ns
+
+     :If 0=+/test
+       ⍝ FIT was used. Don't show the Points Removed Series.
+         win.chartParabolic0.Series[3].(Visibility VisibilityOnLegend)←win.Visibility.Hidden
+     :EndIf
+ :End
+
+⍝ CUBIC @(0,0)
+ :If ∧/0=9 1⊃data
+   ⍝ Regression was not possible. Nothing to show.
+     win.chartCubic0.Watermark.Visibility←win.Visibility.Visible
+
+ :Else
+     minx←0 ⋄ maxx←⌈/x
+     xx←minx,minx+(0.01×maxx-minx)×⍳100
+     abcdr2←9 1⊃data ⋄ test←9 2⊃data
+     xtest←test/x ⋄ ytest←test/y
+     x2←(~test)/x ⋄ y2←(~test)/y
+     yt←abcdr2[1 2 3 4]#.YTCubic x
+     yy←abcdr2[1 2 3 4]#.YTCubic xx
+
+     win.chartCubic0.Header←'Cubic @(0,0): Y'' = 0 + ',(⍕abcdr2[2]),'×X + ',(⍕abcdr2[3]),'×X*2 +  ',(⍕abcdr2[4]),'×X*3 (r² = ',(DEB 3⍕abcdr2[5]),')'
+
+     ns←⎕NS''
+     ns.(Grid LinePoints GoodPoints BadPoints Line)←⎕NS¨5⍴⊂''
+     ns.Grid.(Index X Y YT)←↓¨{⍕((⍴⍵),1)⍴⍵}¨↓[1](⍳⍴x),x,y,[1.5]yt ⍝ Format as characters with decimal point aligned and with ⎕PP of Namespace
+     ns.LinePoints.(X YT)←(0,x)(0,yt)
+     ns.GoodPoints.(X Y)←x2 y2
+     ns.BadPoints.(X Y)←xtest ytest
+     ns.Line.(X YT)←xx yy
+
+     win.tabCubic0.DataContext←AplToDS ns
+
+     :If 0=+/test
+       ⍝ FIT was used. Don't show the Points Removed Series.
+         win.chartCubic0.Series[3].(Visibility VisibilityOnLegend)←win.Visibility.Hidden
+     :EndIf
+ :End
+
+⍝ WEIBULL
+ :If ∧/0=10 1⊃data
+   ⍝ Regression was not possible. Nothing to show.
+     win.chartWeibull.Watermark.Visibility←win.Visibility.Visible
+
+ :Else
+     minx←⌊/x ⋄ maxx←⌈/x
+     xx←minx,minx+(0.005×maxx-minx)×⍳200
+     abcr2←10 1⊃data ⋄ test←10 2⊃data
+     xtest←test/x ⋄ ytest←test/y
+     x2←(~test)/x ⋄ y2←(~test)/y
+     yt←abcr2[1 2 3]#.YTWeibull x
+     yy←abcr2[1 2 3]#.YTWeibull xx
+
+     win.chartWeibull.Header←'Weibull: Y'' = ',(⍕abcr2[1]),' × exp(',(⍕abcr2[2]),' × X*',(⍕abcr2[3]),') (r² = ',(DEB 3⍕abcr2[4]),')'
+
+     ns←⎕NS''
+     ns.(Grid LinePoints GoodPoints BadPoints Line)←⎕NS¨5⍴⊂''
+     ns.Grid.(Index X Y YT)←↓¨{⍕((⍴⍵),1)⍴⍵}¨↓[1](⍳⍴x),x,y,[1.5]yt ⍝ Format as characters with decimal point aligned and with ⎕PP of Namespace
+     ns.LinePoints.(X YT)←x yt
+     ns.GoodPoints.(X Y)←x2 y2
+     ns.BadPoints.(X Y)←xtest ytest
+     ns.Line.(X YT)←xx yy
+
+     win.tabWeibull.DataContext←AplToDS ns
+
+     :If 0=+/test
+       ⍝ FIT was used. Don't show the Points Removed Series.
+         win.chartWeibull.Series[3].(Visibility VisibilityOnLegend)←win.Visibility.Hidden
+     :EndIf
+ :End
+
+⍝ Select the tab of the best regression
+ win.TabControl.SelectedIndex←nbr-1
+
+⍝ Show the window
+ win.Show

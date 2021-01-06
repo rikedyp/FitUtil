@@ -1,0 +1,22 @@
+ abr2←x Logarithmic y;ab;r2;yt
+⍝ FIND THE COEFFICIENTS(a,b) OF A LOGARITHMIC REGRESSION
+⍝ Y' = a + b×ln(X)
+
+ abr2←0 0 0
+
+ :If 2>⍴∪x
+     ∆CRLF,'4. LOGARITHMIC:     Not Enough Independant Points for a Regression' ⋄ →0
+ :ElseIf ∨/x≤0
+     ∆CRLF,'4. LOGARITHMIC:     Regression Not Possible because some X values are ≤ 0' ⋄ →0
+ :End
+
+ :Trap 0
+     ab←y⌹(⍟x)∘.*0 1
+     yt←ab YTLogarithmic x
+     r2←1-(+/(y-yt)*2)÷+/(y-(+/y)÷⍴y)*2
+     abr2←ab,r2
+
+     ∆CRLF,'4. LOGARITHMIC:     Y'' = ',(⍕abr2[1]),' + ',(⍕abr2[2]),'×ln(X)   (r² = ',(DEB 3⍕abr2[3]),')'
+ :Else
+     ∆CRLF,'4. LOGARITHMIC:     Regression not possible' ⋄ →0
+ :EndTrap

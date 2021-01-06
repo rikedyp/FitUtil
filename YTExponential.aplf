@@ -1,0 +1,4 @@
+ yt←ab YTExponential x
+⍝ EVALUATE yt = a × exp(b×X)
+
+ yt←ab[1]×*ab[2]×x

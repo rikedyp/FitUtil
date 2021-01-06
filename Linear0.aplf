@@ -1,0 +1,23 @@
+ abr2←x Linear0 y;ab;r2;yave;yt
+⍝ FIND THE COEFFICIENT(b) OF A LINEAR REGRESSION FORCED THROUGH THE POINT (0,0)
+⍝ Y' = 0 + b×X
+
+ abr2←0 0 0
+
+ :If 1>⍴∪x
+     ∆CRLF,'7. LINEAR @(0,0):    Not Enough Independant Points for a Regression' ⋄ →0
+ :End
+
+ :Trap 0
+     ab←0,(+/x×y)÷(+/x*2)
+     yt←ab YTLinear x
+     yave←(+/y)÷⍴y
+
+   ⍝ r2 may not be valid because the curve is forced through the origin
+     r2←1⌊0⌈((ab[2]×+/x×y)-yave×+/y)÷((+/y*2)-yave×+/y)
+     abr2←ab,r2
+
+     ∆CRLF,'7. LINEAR @(0,0):    Y'' = 0 + ',(⍕abr2[2]),'×X   (r² = ',(DEB 3⍕abr2[3]),')'
+ :Else
+     ∆CRLF,'7. LINEAR @(0,0):    Regression not possible' ⋄ →0
+ :EndTrap

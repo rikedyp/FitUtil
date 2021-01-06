@@ -1,0 +1,10 @@
+ base64String←FileToBase64String fileName;bytes;⎕USING
+⍝ Converts a file to a Base64 String.
+
+ ⎕USING←'System,mscorlib.dll'
+
+⍝ Read the file
+ bytes←IO.File.ReadAllBytes(⊂,fileName)
+
+⍝ Convert to a Base64 string
+ base64String←Convert.ToBase64String(⊂bytes)

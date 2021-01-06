@@ -1,0 +1,4 @@
+ yt←ab YTLogarithmic x
+⍝ EVALUATE yt = a + b×ln(X)
+
+ yt←ab[1]+ab[2]×⍟x

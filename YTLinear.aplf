@@ -1,0 +1,4 @@
+ yt←ab YTLinear x
+⍝ EVALUATE yt = a + b×X
+
+ yt←(x∘.*0 1)+.×ab

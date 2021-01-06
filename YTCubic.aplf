@@ -1,0 +1,4 @@
+ yt←abcd YTCubic x
+⍝ EVALUATE yt = a + b×X + c×X*2 + d×X*3
+
+ yt←(x∘.*0 1 2 3)+.×abcd

@@ -1,0 +1,31 @@
+ r←abr2 TLinear(x y);ab;dof;flag;fn;sty;sy2;test;xave;yt
+⍝ REMOVE THE NON-SIGNIFICATIVES POINTS OF A LINEAR REGRESSION USING A STUDENT TEST
+
+ dof←2 ⋄ ab←abr2[1 2] ⋄ r←abr2((⍴x)⍴0)
+
+ :If 0≥fn←(⍴∪x)-dof
+     ∆CRLF,'1. LINEAR:          Not Enough Independant Points to Perform the Test' ⋄ →0
+ :ElseIf 0 0≡ab
+     ∆CRLF,'1. LINEAR:          Regression Not possible' ⋄ →0
+ :End
+
+ yt←ab YTLinear x
+ xave←(+/x)÷⍴x
+ sy2←((+/(y-yt)*2)÷fn)×((÷fn+dof)+((x-xave)*2)÷+/(x-xave)*2)
+ sty←(sy2*0.5)×∆Tstudent[30⌊fn]
+ test←sty≥|y-yt
+ x←test/x ⋄ y←test/y
+
+ :If 0≥fn←(⍴∪x)-dof
+     ∆CRLF,'1. LINEAR:          Not Enough Independant Points to Perform the Test' ⋄ →0
+ :ElseIf 0 0 0≡abr2←x Linear y
+     ∆CRLF,'1. LINEAR:          Regression Not possible' ⋄ →0
+ :End
+
+ :If 0=+/~test
+     '   No Points Removed'
+ :Else
+     '   The Following Points were Removed: ',⍕(~test)/⍳⍴test
+ :End
+
+ r←abr2(~test)

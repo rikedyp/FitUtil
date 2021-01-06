@@ -1,0 +1,72 @@
+ x TFIT y;coef;line;RegName;temp
+⍝ Program to Perform 10 Different Regressions and use a Student Test
+⍝ to Eliminate the points that are not significative.
+⍝
+⍝ Use FIT to Perform the Regressions without the Student Test.
+⍝
+⍝ ∆TFIT = Global Nested Array of Regression Coefficients used by SHOW
+⍝
+⍝ If 'regno' is the regression number (1 to 10), you can obtain
+⍝ it's regression coefficients by doing: ¯1↓regno 1⊃∆TFIT
+⍝ the points that were eliminated:          regno 2⊃∆TFIT
+
+
+ (⎕IO ⎕ML ⎕WX ⎕PP)←1 3 3 5 ⍝ System variables
+ ∆CRLF←⎕UCS 13 10
+ ∆Tstudent←12.706 4.303 3.182 2.776 2.571 2.447 2.365 2.306 2.262 2.228 2.201 2.179 2.16 2.145 2.131 2.12 2.11 2.101 2.093 2.086 2.08 2.074 2.069 2.064 2.06 2.056 2.052 2.048 2.045 1.96
+
+ x←,x ⋄ y←,y           ⍝ To make sure x and y are vectors.
+ line←90⍴'-'
+ RegName←⊃'LINEAR' 'EXPONENTIAL' 'POWER' 'LOGARITHMIC' 'PARABOLIC' 'CUBIC' 'LINEAR(0,0)' 'PARABOLIC(0,0)' 'CUBIC(0,0)' 'WEIBULL'
+ ∆TFIT←(10⍴⊂(0 0 0 0 0)(0 0)),(⊂0 0),(⊂0 0)
+
+⍝ If x and y are not the same dimension we exit.
+ :If (⍴x)≠⍴y
+     'X and Y Don''t Have the Same Number of Points.',∆CRLF,'Correct it and Try Again' ⋄ →0
+ :End
+
+⍝ We need at least 2 Independants Points
+ :If 2>⍴∪x
+     'Not Enough Independants Points to Perform a Regression' ⋄ →0
+ :End
+
+ ∆CRLF,line
+ 'CALCULATION OF THE CORRELATION''S COEFFICIENTS'
+ line
+
+ coef←⊂x Linear y
+ coef,←⊂x Exponential y
+ coef,←⊂x Power y
+ coef,←⊂x Logarithmic y
+ coef,←⊂x Parabolic y
+ coef,←⊂x Cubic y
+ coef,←⊂x Linear0 y
+ coef,←⊂x Parabolic0 y
+ coef,←⊂x Cubic0 y
+ coef,←⊂x Weibull y
+
+ ∆CRLF,line
+ '    SAME REGRESSIONS WITH THE NON SIGNIFICANT POINT(S) REMOVED:'
+ line
+
+ ∆TFIT←⊂(1⊃coef)TLinear x y
+ ∆TFIT,←⊂(2⊃coef)TExponential x y
+ ∆TFIT,←⊂(3⊃coef)TPower x y
+ ∆TFIT,←⊂(4⊃coef)TLogarithmic x y
+ ∆TFIT,←⊂(5⊃coef)TParabolic x y
+ ∆TFIT,←⊂(6⊃coef)TCubic x y
+ ∆TFIT,←⊂(7⊃coef)TLinear0 x y
+ ∆TFIT,←⊂(8⊃coef)TParabolic0 x y
+ ∆TFIT,←⊂(9⊃coef)TCubic0 x y
+ ∆TFIT,←⊂(10⊃coef)TWeibull x y
+ ∆TFIT,←(⊂x),⊂y
+
+ ∆CRLF,line
+ :If 0≠¯1↑1⊃(temp←1⍴⍒∊¯1↑¨1⊃¨10↑∆TFIT)⊃∆TFIT
+     'THE BEST REGRESSION IS No ',(⍕temp),': ',,RegName[temp;]
+ :Else
+     'NO REGRESSION POSSIBLE'
+ :End
+ line,∆CRLF
+
+ #.WPF.SHOW ∆TFIT

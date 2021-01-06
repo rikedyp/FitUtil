@@ -1,0 +1,4 @@
+ yt←abc YTWeibull x
+⍝ EVALUATE yt = a × exp(b×X*c)
+
+ yt←abc[1]×*abc[2]×x*abc[3]

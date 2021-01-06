@@ -1,0 +1,25 @@
+ abr2←x Power y;ab;r2;yt
+⍝ FIND THE COEFFICIENTS(a,b) OF A POWER REGRESSION
+⍝ Y' = a × X*b
+
+ abr2←0 0 0
+
+ :If 2>⍴∪x
+     ∆CRLF,'3. POWER:           Not Enough Independant Points for a Regression' ⋄ →0
+ :ElseIf (∨/x≤0)∨(∨/y≤0)
+     ∆CRLF,'3. POWER:           Regression Not Possible because some X or Y values are ≤ 0' ⋄ →0
+ :End
+
+ :Trap 0
+     ab←(⍟y)⌹(⍟x)∘.*0 1
+     ab[1]←*ab[1]
+     yt←ab YTPower x
+     yt←⍟yt
+     y←⍟y
+     r2←1-(+/(y-yt)*2)÷+/(y-(+/y)÷⍴y)*2
+     abr2←ab,r2
+
+     ∆CRLF,'3. POWER:           Y'' = ',(⍕abr2[1]),' × X*',(⍕abr2[2]),'   (r² = ',(DEB 3⍕abr2[3]),')'
+ :Else
+     ∆CRLF,'3. POWER:           Regression not possible' ⋄ →0
+ :EndTrap

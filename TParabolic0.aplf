@@ -1,0 +1,32 @@
+ r←abcr2 TParabolic0(x y);abc;dof;fn;sty;sy2;test;xave;yt
+⍝ REMOVE THE NON-SIGNIFICATIVES POINTS OF A PARABOLIC REGRESSION
+⍝ FORCED THROUGH THE ORIGIN USING A STUDENT TEST
+
+ dof←2 ⋄ abc←abcr2[1 2 3] ⋄ r←abcr2((⍴x)⍴0)
+
+ :If 0≥fn←(⍴∪x)-dof
+     ∆CRLF,'8. PARABOLIC @(0,0): Not Enough Independant Points to Perform the Test' ⋄ →0
+ :ElseIf 0 0 0≡abc
+     ∆CRLF,'8. PARABOLIC @(0,0): Regression Not possible' ⋄ →0
+ :End
+
+ yt←abc YTParabolic x
+ xave←(+/x)÷⍴x
+ sy2←((+/(y-yt)*2)÷fn)×((÷fn+dof)+((x-xave)*2)÷+/(x-xave)*2)
+ sty←(sy2*0.5)×∆Tstudent[30⌊fn]
+ test←sty≥|y-yt
+ x←test/x ⋄ y←test/y
+
+ :If 0≥fn←(⍴∪x)-dof
+     ∆CRLF,'8. PARABOLIC @(0,0): Not Enough Independant Points to Perform the Test' ⋄ →0
+ :ElseIf 0 0 0 0≡abcr2←x Parabolic0 y
+     ∆CRLF,'8. PARABOLIC @(0,0): Regression Not possible' ⋄ →0
+ :End
+
+ :If 0=+/~test
+     '   No Points Removed'
+ :Else
+     '   The Following Points were Removed: ',⍕(~test)/⍳⍴test
+ :End
+
+ r←abcr2(~test)

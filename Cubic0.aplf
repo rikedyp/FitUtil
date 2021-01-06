@@ -1,0 +1,24 @@
+ abcdr2←x Cubic0 y;abcd;r2;temp;xx;yt
+⍝ FIND THE COEFFICIENTS(b,c,d) OF A CUBIC REGRESSION FORCED THROUGH THE POINT (0,0)
+⍝ Y' = 0 + b×X + c×X*2 + d×X*3
+
+ abcdr2←0 0 0 0 0
+
+ :If 3>⍴∪x
+     ∆CRLF,'9. CUBIC @(0,0):     Not Enough Independant Points for a Regression' ⋄ →0
+ :End
+
+ :Trap 0
+     xx←+/[1]x∘.*1 2 3 4 5
+     abcd←0,((+/y),(+/x×y),+/y×x*2)⌹3 3⍴xx[1 2 3 2 3 4 3 4 5]
+     yt←abcd YTCubic x
+
+   ⍝ r2 may not be valid because the curve is forced through the origin
+     r2←1⌊0⌈1-(+/(y-yt)*2)÷+/(y-(+/y)÷⍴y)*2
+     abcdr2←abcd,r2
+
+     temp←∆CRLF,'9. CUBIC @(0,0):     Y'' = 0 + ',(⍕abcdr2[2]),'×X + ',(⍕abcdr2[3]),'×X*2 + '
+     temp,(⍕abcdr2[4]),'×X*3   (r² = ',(DEB 3⍕abcdr2[5]),')'
+ :Else
+     ∆CRLF,'9. CUBIC @(0,0):     Regression not possible' ⋄ →0
+ :EndTrap

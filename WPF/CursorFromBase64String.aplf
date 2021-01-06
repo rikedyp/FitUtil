@@ -1,0 +1,16 @@
+ cursor←CursorFromBase64String base64String;imageBytes;MS;⎕USING
+⍝ Convert a Base64String to a cursor.
+
+ ⎕USING←'System.IO,mscorlib.dll' 'System,mscorlib.dll' 'System.Windows,WPF/PresentationCore.dll'
+
+⍝ Convert Base64 String to byte[]
+ imageBytes←Convert.FromBase64String(⊂base64String)
+
+⍝ Create a new MemoryStream with the byte[]
+ MS←⎕NEW MemoryStream(⊂imageBytes)
+
+⍝ Create the icon
+ cursor←⎕NEW Input.Cursor MS
+
+⍝ Erase the MemoryStream
+ MS.Close ⋄ MS.Dispose ⋄ MS←⎕NULL

@@ -1,0 +1,20 @@
+ abcr2←x Parabolic y;abc;r2;yt
+⍝ FIND THE COEFFICIENTS(a,b,c) OF A PARABOLIC REGRESSION
+⍝ Y' = a + b×X + c×X*2
+
+ abcr2←0 0 0 0
+
+ :If 3>⍴∪x
+     ∆CRLF,'5. PARABOLIC:       Not Enough Independant Points for a Regression' ⋄ →0
+ :End
+
+ :Trap 0
+     abc←y⌹x∘.*0 1 2
+     yt←abc YTParabolic x
+     r2←1-(+/(y-yt)*2)÷+/(y-(+/y)÷⍴y)*2
+     abcr2←abc,r2
+
+     ∆CRLF,'5. PARABOLIC:       Y'' = ',(⍕abcr2[1]),' + ',(⍕abcr2[2]),'×X + ',(⍕abcr2[3]),'×X*2   (r² = ',(DEB 3⍕abcr2[4]),')'
+ :Else
+     ∆CRLF,'5. PARABOLIC:       Solution not possible' ⋄ →0
+ :End

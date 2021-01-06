@@ -1,0 +1,161 @@
+ rootObj←FixXaml xamlString;attribs;caller;data;err;event;events;expr;inter;name;names;ref
+     ⍝ Creates a WPF Object From an APL Character Vector Representing XAML.
+     ⍝ Each named element(s) object will be attached to rootObject.
+     ⍝ You can see the list of attached elements by doing rootObject.⎕NL -9
+     ⍝ The callback functions of events must begin with '__' (ex.: Click="__Button_Click")
+     ⍝ For 3rd party dll, ⎕USING must be properly initiated before calling this function.
+     ⍝ If there is an error parsing the Xaml, the function will return ⎕NULL with an explanation of the error.
+     ⍝ Parts of code is taken from Dyalog.
+     ⍝
+     ⍝ xamlString = Vector of Characters representing a XAML string
+     ⍝ rootObj    = WPF Root Element Object if no error
+     ⍝            = ⎕NULL (explanation of error) if error
+     ⍝
+     ⍝ If an Element has an event attribute that begins with '__' and is named, it will be fixed.
+     ⍝ If an Element has an event attribute that begins with '__' and is not named, it will not be fixed and make a warning.
+     ⍝ If an Element has an event attribute that does not begins with '__', it will make an error and return a ⎕NULL rootObj.
+     ⍝ Function of an event attribute must be defined in the WS otherwise it will not be fixed and make a warning.
+     ⍝ Root element with an event must be named, otherwise it is recommended to be nameless.
+     ⍝ Root element name is removed in all cases. Use the rootObj variable directly to access its properties/methods.
+
+ :Trap 0
+         ⍝ Check if Valid XML
+         ⍝ The following line will bug with an explanation if there is a syntax error in xamlString.
+     ⎕USING∪←⊂'System.Xml,System.Xml.dll'
+     (⎕NEW XmlDocument).LoadXml(⊂xamlString)
+
+         ⍝ The string is valid XML. Clean-it before 'compiling'.
+     data←⎕XML xamlString                                               ⍝ Convert the characters to APL representation of Xml
+     attribs←data[;4]                                                   ⍝ Attributes of all the nodes
+     names←{1⊃(((⍵[;1]∊⊂'x:Name')∨(⍵[;1]∊⊂'Name'))/⍵[;2]),⊂''}¨attribs  ⍝ Find all 'x:Name' and 'Name' attributes
+     events←⊃⍪/names{(⊂⍺),((⊂'__')≡¨2↑¨⊃¨⍵[;2])⌿⍵}¨attribs              ⍝ Events are all attributes with values beginning with '__'
+     data[;4]←{(~(⊂'__')≡¨2↑¨⊃¨⍵[;2])⌿⍵}¨attribs                        ⍝ Remove the events: attribute definition beginning with '__'
+     data[1;4]←⊂{(~(⊂'x:Class')≡¨7↑¨⊃¨⍵[;1])⌿⍵}⊃data[1;4]               ⍝ Remove the x:Class attribute if present in first node
+     xamlString←⎕XML data                                               ⍝ Convert the APL representation of Xml to characters
+ :Else
+         ⍝ There is an Error. Exit.
+     →ERROR
+
+ :EndTrap
+
+     ⍝ Obtain the Root Element Object of the clean-up XAML String.
+     ⍝ You can get an error here if, for example, there is an event that does not begin with '__' and was not remove in Xaml Clean-up.
+ :Trap 0
+     ⎕USING∪←⊂'System.Windows.Markup,WPF/PresentationFramework.dll'  ⍝ was ⎕USING←' before
+     rootObj←XamlReader.Parse(⊂xamlString)
+
+        ⍝ ↓↓↓ Alternative way of doing the same thing.
+        ⍝ ⎕USING∪ ← '' 'System.IO' 'System.Xml,system.xml.dll' 'System.Windows,WPF/PresentationFramework.dll' 'System.Windows.Markup'
+        ⍝ rootObj ← XamlReader.Load ⎕NEW XmlTextReader (⎕NEW StringReader (⊂xamlString))
+
+     rootObj.∆Events←events  ⍝ Optional: List the events in the property ∆Events
+ :Else
+         ⍝ There is an error. Exit.
+     →ERROR
+
+ :EndTrap
+
+     ⍝ Fix the events of the rootObj before removing its name:
+     ⍝ Will bug if the rootObj does not have a name.
+ :Trap 0
+     :If 1∊events[;1]∊⊂rootObj.Name                                    ⍝ Check if the rootObj has an event
+         :For (ref event expr) :In ↓(events[;1]∊⊂rootObj.Name)⌿events  ⍝ Loop through the events
+             caller←(1⊃⎕NSI),'.'                                       ⍝ Namespace that is calling this function
+             expr←((~'#'∊expr)/caller),expr                            ⍝ Add the namespace of the caller to the name of the event
+             ⍎'rootObj.on',event,'←''',expr,''''                       ⍝ Hook-up the event
+         :EndFor
+     :EndIf
+ :Else
+         ⍝ Do nothing. rootObj does not have a name or events to fix.
+
+ :EndTrap
+
+     ⍝ Create refs to all named child objects
+ :Trap 0
+     names←(,⊃0≠⍴¨names)/names                  ⍝ Keep only the not empty names
+     names←(0=rootObj.⎕NC⊃names)/names          ⍝ Only names which do not already have a meaning
+     names←(~names∊⊂rootObj.Name)/names         ⍝ Remove the name of the rootObj to prevent a recursive entry.
+     events←(~events[;1]∊⊂rootObj.Name)⌿events  ⍝ Remove the event(s) of the rootObj from the list now that they have been fixed.
+ :Else
+         ⍝ Do nothing. The previous 2 lines will bug if rootObj does not have a name.
+
+ :EndTrap
+
+     ⍝ Warns that a name will not be fixed because it is a property or method of the Root Object (ie. name conflict)
+ :Trap 0
+     :If 1∊inter←names∊rootObj.⎕NL-2 3
+         ⎕←'FixXaml Warning - Name(s) not fixed in conflict with Property/Method of Root Object: ',inter/names
+         names←(~inter)/names
+     :EndIf
+
+ :Else
+       ⍝ Do nothing. Root Object does not like ⎕NL
+
+ :EndTrap
+
+     ⍝ Add a reference of all the named object to the rootObj.
+     ⍝ FindName will not find the names on certain object (like template),
+     ⍝  so we need to iterate and Trap the error when the name is not found.
+ :For name :In names
+     :Trap 0
+         ⍎'rootObj.(',name,')←rootObj.FindName ⊂name'
+
+     :Else
+         ⎕←'FixXaml Warning - Name Not found: ',name
+
+     :EndTrap
+ :EndFor
+
+     ⍝ Show a Warning for Events that begins with '__' that will not be fixed because they are nameless:
+ :If 0≠↑⍴inter←(~events[;1]∊names)⌿events
+     ⎕←(⎕UCS 13),'FixXaml Warning - Following Nameless Event(s) Are Not Fixed:'
+     ⎕←inter
+ :End
+
+     ⍝ Hook-up events
+ events←(events[;1]∊names)⌿events ⍝ Named objects only
+ caller←(1⊃⎕NSI),'.'              ⍝ Namespace that is calling this function
+
+ :For (ref event expr) :In ↓events
+     :Trap 0
+            ⍝ Add the namespace of the caller to the name of the event
+         expr←((~'#'∊expr)/caller),expr
+
+         :If 0≠⎕NC expr
+                ⍝ Callback function exist. Hook-up the event.
+             ⍎'rootObj.',ref,'.on',event,'←''',expr,''''
+         :Else
+                ⍝ Callback function does not exist. Show warning and do not fix the event.
+             ⎕←'FixXaml Warning - Function ',expr,' does not exist. The Event ''',event,''' of ''',ref,''' is not fixed.'
+         :End
+
+     :Else
+            ⍝ There is an error. Exit.
+         →ERROR
+
+     :EndTrap
+ :EndFor
+
+ →0  ⍝ rootObj is returned here if there is no error.
+
+ERROR:
+      ⍝ Build the Error Message
+ :If 90≠⎕EN
+         ⍝ APL Error
+     err←(1⊃⎕DM),': ',{(' '=1↑⍵)↓((1↓a,0)∨a←' '≠⍵)/⍵}(2⊃⎕DM),(⎕UCS 13)
+
+ :Else
+       ⍝ .Net Error
+     :If '(NULL)'≢⍕⎕EXCEPTION
+           ⍝ Show the value of ⎕EXCEPTION if not (NULL).
+         err←('EXCEPTION: ',⎕EXCEPTION.Message),(⎕UCS 13)
+     :Else
+           ⍝ If ⎕EXCEPTION is (NULL) than the .Message property is empty.
+         err←'EXCEPTION: Unknown error',(⎕UCS 13)
+
+     :EndIf
+
+ :End
+
+ rootObj←⎕NULL err
+⍝∇⍣§C:\Secovac2\Program\APL Dev\DSechoir2_Snap\util\fixxaml.dyalog§0§ 2017 10 18 19 45 12 229 §búnMVb§0

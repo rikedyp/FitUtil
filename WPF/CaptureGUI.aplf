@@ -1,0 +1,53 @@
+ img←makeTransparent CaptureGUI gui;bmp;bmpEncoder;bmpimg;height;index;MS;targetBmp;title;width;⎕USING
+⍝ Capture the gui object and return a persistent image object.
+⍝
+⍝ gui = WPF GUI object to capture
+⍝ makeTransparent = Optional 0 or 1 (Make Transparent by using the corner pixel)
+
+⍝ Capture the GUI into a RenderTargetBitmap
+ ⎕USING←'System.Windows.Media,WPF/PresentationCore.dll'
+ (width height)←⌊gui.(ActualWidth ActualHeight)
+ targetBmp←⎕NEW Imaging.RenderTargetBitmap(width,height,96,96,PixelFormats.Pbgra32)
+ targetBmp.Render(gui)
+
+⍝ Create an Encoder to receive the RenderTargetBitmap
+ ⎕USING←'System.Windows,WindowsBase.dll' 'System.Windows.Media,WPF/PresentationCore.dll' 'System.IO,mscorlib.dll'
+ bmpEncoder←⎕NEW Imaging.PngBitmapEncoder
+ bmpEncoder.Frames.Add(Imaging.BitmapFrame.Create(targetBmp))
+ MS←⎕NEW MemoryStream
+ bmpEncoder.Save(MS) ⋄ targetBmp←⎕NULL
+
+⍝ Convert the RenderTargetBitmap to a regular Bitmap.
+ ⎕USING←'System.Drawing,System.Drawing.dll'
+ bmp←⎕NEW Bitmap MS
+ MS.Close ⋄ MS.Dispose ⋄ MS←⎕NULL  ⍝ Erase the MemoryStream
+
+⍝ Make Transparent by using the corner pixel (Optional)
+ :If 1=makeTransparent
+    ⍝ Make transparent.
+     bmp.MakeTransparent(bmp.GetPixel(1,1))
+ :EndIf
+
+⍝ Save the Bitmap to a MemoryStream
+ ⎕USING←'System,mscorlib.dll' 'System.Drawing,System.Drawing.dll'
+ MS←⎕NEW IO.MemoryStream
+ bmp.Save(MS,Imaging.ImageFormat.Png)
+ bmp.Dispose ⋄ bmp←⎕NULL
+
+⍝ Create a BitmapImage from the MemoryStream of the Bitmap
+ ⎕USING←'System.Windows.Media.Imaging,WPF/PresentationCore.dll'
+ bmpimg←⎕NEW BitmapImage
+ bmpimg.BeginInit
+⍝ The .OnLoad CacheOption will load the MemoryStream right now so it can be dispose.
+⍝ That way there is no need to use a WriteableBitmap.
+ bmpimg.CacheOption←bmpimg.CacheOption.OnLoad
+ bmpimg.StreamSource←MS
+ bmpimg.EndInit
+
+⍝ Dispose Of the BitmapImage's MemoryStream previously created.
+ MS.Close ⋄ MS.Dispose ⋄ MS←⎕NULL
+
+⍝ Create an Image with the BitmapImage
+ ⎕USING←'System.Windows.Controls,WPF/PresentationFramework.dll'
+ img←⎕NEW Image
+ img.Source←bmpimg

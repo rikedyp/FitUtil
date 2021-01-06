@@ -1,0 +1,4 @@
+ yt←ab YTPower x
+⍝ EVALUATE yt = a × X*b
+
+ yt←ab[1]×x*ab[2]

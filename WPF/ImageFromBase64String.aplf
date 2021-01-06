@@ -1,0 +1,26 @@
+ bmpimg←ImageFromBase64String base64String;imageBytes;MS;⎕USING
+⍝ Convert a Base64String to a System.Windows.Media.Imaging.BitmapImage.
+
+ ⎕USING←'System.IO,mscorlib.dll' 'System,mscorlib.dll' 'System.Windows.Media.Imaging,WPF/PresentationCore.dll'
+
+⍝ Convert Base64 String to byte[] as numbers.
+ imageBytes←Convert.FromBase64String(⊂base64String)
+
+⍝ Create a new MemoryStream with the byte[]
+ MS←⎕NEW MemoryStream(⊂imageBytes)
+
+⍝ Create a BitmapImage Object from the Memory Stream
+ bmpimg←⎕NEW BitmapImage
+ bmpimg.BeginInit
+⍝ The .OnLoad CacheOption will load the MemoryStream right now so it can be dispose.
+⍝ That way there is no need to use a WriteableBitmap.
+ bmpimg.CacheOption←bmpimg.CacheOption.OnLoad
+ bmpimg.StreamSource←MS
+ bmpimg.EndInit
+
+⍝⍝ Create a WriteableBitmap that does not need the MemoryStream to persist
+⍝⍝ That way it is possible to erase the MemoryStream after creating the Image
+⍝  bmpimg←⎕NEW WriteableBitmap bmpimg
+
+⍝ Erase the MemoryStream
+ MS.Close ⋄ MS.Dispose ⋄ MS←⎕NULL

@@ -1,0 +1,31 @@
+ r←abcr2 TWeibull(x y);abc;dof;fn;sty;sy2;test;X;xave;Y;yt;YT
+⍝ REMOVE THE NON-SIGNIFICATIVES POINTS OF A WEIBULL REGRESSION USING A STUDENT TEST
+
+ dof←3 ⋄ abc←abcr2[1 2 3] ⋄ r←abcr2((⍴x)⍴0)
+
+ :If 0≥fn←(⍴∪x)-dof
+     ∆CRLF,'10.WEIBULL:          Not Enough Independant Points to Perform the Test' ⋄ →0
+ :ElseIf 0 0 0≡abc
+     ∆CRLF,'10.WEIBULL:          Not able to Converge to a Solution' ⋄ →0
+ :End
+
+ yt←abc YTWeibull x
+ xave←(+/x)÷⍴x
+ sy2←((+/(y-yt)*2)÷fn)×((÷fn+dof)+((x-xave)*2)÷+/(x-xave)*2)
+ sty←(sy2*0.5)×∆Tstudent[30⌊fn]
+ test←sty≥|y-yt
+ x←test/x ⋄ y←test/y
+
+ :If 0≥fn←(⍴∪x)-dof
+     ∆CRLF,'10.WEIBULL:          Not Enough Independant Points to Perform the Test' ⋄ →0
+ :ElseIf 0 0 0 0≡abcr2←x Weibull y
+     →0
+ :End
+
+ :If 0=+/~test
+     '   No Points Removed'
+ :Else
+     '   The Following Points were Removed: ',⍕(~test)/⍳⍴test
+ :End
+
+ r←abcr2(~test)

@@ -1,0 +1,70 @@
+ title PrintVisual element;bd;flowDoc;idpSource;marginBottom;marginLeft;marginMax;marginRight;marginTop;MS;pageHeight;pagePrintHeight;pagePrintWidth;pageViewer;pageWidth;printCapabilities;printDLG;vb;⎕USING
+⍝ Print a Visual Element in the Center of the Page with a Border around it.
+
+⍝ Check if at least one printer is installed
+ :If 0=⍴'.'⎕WG'PrintList'
+     ⎕←'PrintVisual Error: No Printer Installed !' ⋄ →0
+ :End
+
+⍝ Rotate the image to simulate Landscape printing without the printer's PageOrientation.
+⍝ Some printers have problems printing in Landscape because not enough memory.
+⍝ Printing in Portrait Mode is usually faster too.
+ :If element.Width>element.Height
+     ⎕USING←'System.Windows.Media,WPF/PresentationCore.dll'
+     element.LayoutTransform←⎕NEW RotateTransform(90)
+ :EndIf
+
+⍝ Get the properties of the Default or Selected Printer
+ ⎕USING←'System.Windows.Controls,WPF/PresentationFramework.dll'
+ printDLG←⎕NEW PrintDialog
+ ⍝ ↓↓↓ Comment the next 3 lines to print directly to the Default Printer without showing the dialog window.
+ :If 0=printDLG.ShowDialog
+     →0 ⍝ Printing was cancelled
+ :End
+ printDLG.PrintTicket.PageOrientation←printDLG.PrintTicket.PageOrientation.Portrait
+ printCapabilities←printDLG.PrintQueue.GetPrintCapabilities(printDLG.PrintTicket)
+
+⍝ Find the largest margin of the default paper.
+ (pagePrintWidth pagePrintHeight)←printCapabilities.PageImageableArea.(ExtentWidth ExtentHeight) ⍝ Total Width and Height of the paper in pixel
+ (marginLeft marginTop)←printCapabilities.PageImageableArea.(OriginWidth OriginHeight)           ⍝ Left and Top margin
+ (pageWidth pageHeight)←printDLG.(PrintableAreaWidth PrintableAreaHeight)                        ⍝ Printable Width and Height
+ marginRight←pageWidth-(pagePrintWidth+marginLeft)                                               ⍝ Right Margin calculated
+ marginBottom←pageHeight-(pagePrintHeight+marginTop)                                             ⍝ Bottom Margin calculated
+ marginMax←15⌈⌈/marginLeft,marginTop,marginRight,marginBottom                                    ⍝ Largest of all the margins with a minimum of 15 (help center the border)
+
+⍝ Build a Viewbox to hold the image with a border around it.
+⍝ The Viewbox will scale the image to the paper size.
+ ⎕USING←'System.Windows.Controls,WPF/PresentationFramework.dll' 'System.Windows,WPF/PresentationFramework.dll'
+ bd←⎕NEW Border
+ bd.(BorderThickness CornerRadius BorderBrush)←(⎕NEW Thickness 2)(⎕NEW CornerRadius 3)(SolidColor'Black')
+ bd.Child←element     ⍝ The element is the child of the border.
+
+ vb←⎕NEW Viewbox
+ vb.Margin←⎕NEW Thickness marginMax
+ vb.Child←bd      ⍝ The border is the child of the Viewbox.
+
+⍝ Initialize a FlowDocument with the Viewbox as the Visual Element
+⍝ containing the capture Bitmap as an Image.
+ ⎕USING←'System.Windows.Documents,WPF/PresentationFramework.dll'
+ flowDoc←⎕NEW FlowDocument(⎕NEW BlockUIContainer vb)
+
+⍝ Initialize a FlowDocumentPageViewer
+⍝ FlowDocumentPageViewer will center horizontally the BlockUIContainer (by Default), with a FlowDocumentScrollViewer it is not possible.
+ ⎕USING←'System.Windows.Controls,WPF/PresentationFramework.dll'
+ pageViewer←⎕NEW FlowDocumentPageViewer
+ pageViewer.Document←flowDoc
+
+⍝ Set the Document According to the Properties of the Default Printer
+ pageViewer.Document.(PageWidth PageHeight ColumnWidth ColumnGap)←pagePrintWidth pagePrintHeight pagePrintWidth 0
+
+⍝ Print the Document
+ ⎕USING←'System.Windows.Documents,WPF/PresentationCore.dll'
+ idpSource←IDocumentPaginatorSource ⎕CLASS(pageViewer.Document)
+ printDLG.PrintDocument((idpSource.DocumentPaginator)(title))
+
+⍝ ↓↓↓ Remove the comments to see the pageViewer with what was sent to the printer.
+⍝ ⎕USING←'System.Windows,WPF/PresentationFramework.dll'
+⍝ winFlowDoc←⎕NEW Window
+⍝ winFlowDoc.Content←pageViewer
+⍝ winFlowDoc.SizeToContent←win.SizeToContent.WidthAndHeight
+⍝ winFlowDoc.Show

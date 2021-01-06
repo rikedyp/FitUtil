@@ -1,0 +1,19 @@
+ __Chart_MouseRightButtonDown(sender event)
+⍝ To reset the zoom of a sfChart
+
+ :If 1≠sender.PrimaryAxis.ZoomFactor
+ :AndIf 0=sender.PrimaryAxis.EnableScrollBar
+    ⍝ Was Zoomed without the ScrollBar (Mouse Wheel). Reset the Chart.
+     sender.Behaviors.Item[2].Reset  ⍝ Item[2] = Syncfusion.UI.Xaml.Charts.ChartZoomPanBehavior
+     →0
+ :End
+
+ :If 0=sender.PrimaryAxis.EnableScrollBar
+    ⍝ Not Zoomed and Without ScrollBar. Show the ScrollBar
+    ⍝ EXCEPTION if EnableScrollBar is 0 in Xaml when set to 1 for the first time.
+     sender.(PrimaryAxis SecondaryAxis).EnableScrollBar←1
+ :Else
+    ⍝ With ScrollBar. Hide the ScrollBar.
+     sender.(PrimaryAxis SecondaryAxis).EnableScrollBar←0
+     sender.Behaviors.Item[2].Reset
+ :End
