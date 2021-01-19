@@ -11,7 +11,7 @@ It is compatible with Dyalog version 16.0 or greater.
 
 ## Regressions
 The regressions performed are:
-```
+```text
  1. Linear:      Y' = a + b×X
  2. Exponential: Y' = a × exp(b×X)
  3. Power:       Y' = a × X*b
@@ -41,7 +41,7 @@ For example for the following values of X1 and Y1:
 19.191 17.672 17.063 16.613 14.602 13.25 12.418 11.859 11.512 9.75 9.008 7.309 6.836 5.765
 ```
 The following is written in the session:
-```APL
+```text
       X1 FIT Y1
 ------------------------------------------------------------------------------------------
 CALCULATION OF THE CORRELATION'S COEFFICIENTS
@@ -64,7 +64,7 @@ With the following WPF Window will be showing the results graphically:
 ![WPF GUI window from the FIT function](https://raw.githubusercontent.com/rikedyp/FitUtil/main/FIT.png)
 
 To remove the non significant points before doing the regressions:
-```APL
+```text
       X1 TFIT Y1
 ------------------------------------------------------------------------------------------
     SAME REGRESSIONS WITH THE NON SIGNIFICANT POINT(S) REMOVED:
