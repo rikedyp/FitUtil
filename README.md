@@ -9,6 +9,14 @@ FitUtil is a Dyalog Unicode utility that contains functions related to curve fit
 
 It is compatible with Dyalog version 16.0 or greater.
 
+## Try it
+Try the following example to see the main function at work:
+```APL
+      x1 ← 0.5497 0.817 0.999 1.19 2.78 5.53 10.21 16.59 22.56 99.7 200 1000 1500 5000
+      y1 ← 19.191 17.672 17.063 16.613 14.602 13.25 12.418 11.859 11.512 9.75 9.008 7.309 6.836 5.765
+      x1 FIT y1
+```
+
 ## Regressions
 The regressions performed are:
 ```text
@@ -61,7 +69,7 @@ THE BEST REGRESSION IS No 3: POWER
 ------------------------------------------------------------------------------------------
 ```
 With the following WPF Window will be showing the results graphically:
-![WPF GUI window from the FIT function](https://raw.githubusercontent.com/rikedyp/FitUtil/main/FIT.png)
+![WPF GUI window from the FIT function](https://raw.githubusercontent.com/rikedyp/FitUtil/main/Assets/FIT.png)
 
 To remove the non significant points before doing the regressions:
 ```text
@@ -93,7 +101,7 @@ THE BEST REGRESSION IS No 10: WEIBULL
 ------------------------------------------------------------------------------------------
 ```
 With the following WPF Window will be showing the results graphically:  
-![WPF GUI window from the TFIT function](https://raw.githubusercontent.com/rikedyp/FitUtil/main/TFIT.png)
+![WPF GUI window from the TFIT function](https://raw.githubusercontent.com/rikedyp/FitUtil/main/Assets/TFIT.png)
 
 This utility is also a demonstration of:
 - A WPF GUI program
